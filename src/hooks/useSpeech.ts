@@ -1,40 +1,34 @@
 'use client'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useRef } from 'react'
 
 export function useSpeech() {
-  const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  useEffect(() => {
-    function loadVoice() {
-      const voices = window.speechSynthesis.getVoices()
-      // Prefer English voice — reads Georgian text without distorting into Cyrillic
-      voiceRef.current =
-        voices.find(v => v.lang === 'en-US' && v.name.includes('Samantha')) ||
-        voices.find(v => v.lang.startsWith('en-US')) ||
-        voices.find(v => v.lang.startsWith('en')) ||
-        voices[0] ||
-        null
+  const speak = useCallback(async (text: string) => {
+    if (typeof window === 'undefined') return
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
     }
-    loadVoice()
-    window.speechSynthesis.addEventListener('voiceschanged', loadVoice)
-    return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', loadVoice)
-      window.speechSynthesis.cancel()
+    try {
+      const res = await fetch(`/api/tts?text=${encodeURIComponent(text)}`)
+      if (!res.ok) return
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const audio = new Audio(url)
+      audioRef.current = audio
+      audio.onended = () => URL.revokeObjectURL(url)
+      await audio.play()
+    } catch {
+      // silently fail
     }
-  }, [])
-
-  const speak = useCallback((text: string) => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const u = new SpeechSynthesisUtterance(text)
-    if (voiceRef.current) u.voice = voiceRef.current
-    u.rate = 0.82   // slightly slower — Georgian text needs time
-    u.pitch = 1
-    window.speechSynthesis.speak(u)
   }, [])
 
   const stop = useCallback(() => {
-    window.speechSynthesis?.cancel()
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current = null
+    }
   }, [])
 
   return { speak, stop }
