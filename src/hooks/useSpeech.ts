@@ -1,26 +1,24 @@
 'use client'
 import { useCallback, useEffect, useRef } from 'react'
 
-function getVoice(): SpeechSynthesisVoice | null {
-  const voices = window.speechSynthesis.getVoices()
-  if (!voices.length) return null
-  return (
-    voices.find(v => v.lang.startsWith('ka')) ||
-    voices.find(v => v.lang.startsWith('ru')) ||
-    voices.find(v => v.lang.startsWith('en')) ||
-    voices[0]
-  )
-}
-
 export function useSpeech() {
   const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
 
   useEffect(() => {
-    const load = () => { voiceRef.current = getVoice() }
-    load()
-    window.speechSynthesis.addEventListener('voiceschanged', load)
+    function loadVoice() {
+      const voices = window.speechSynthesis.getVoices()
+      // Prefer English voice — reads Georgian text without distorting into Cyrillic
+      voiceRef.current =
+        voices.find(v => v.lang === 'en-US' && v.name.includes('Samantha')) ||
+        voices.find(v => v.lang.startsWith('en-US')) ||
+        voices.find(v => v.lang.startsWith('en')) ||
+        voices[0] ||
+        null
+    }
+    loadVoice()
+    window.speechSynthesis.addEventListener('voiceschanged', loadVoice)
     return () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', load)
+      window.speechSynthesis.removeEventListener('voiceschanged', loadVoice)
       window.speechSynthesis.cancel()
     }
   }, [])
@@ -29,13 +27,8 @@ export function useSpeech() {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
-    // Only set ka-GE if the browser actually has a Georgian voice
-    const voice = voiceRef.current || getVoice()
-    if (voice) {
-      u.voice = voice
-      u.lang = voice.lang
-    }
-    u.rate = 0.88
+    if (voiceRef.current) u.voice = voiceRef.current
+    u.rate = 0.82   // slightly slower — Georgian text needs time
     u.pitch = 1
     window.speechSynthesis.speak(u)
   }, [])
