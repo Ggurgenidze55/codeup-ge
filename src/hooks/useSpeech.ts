@@ -1,27 +1,42 @@
 'use client'
 import { useCallback, useEffect, useRef } from 'react'
 
+function getVoice(): SpeechSynthesisVoice | null {
+  const voices = window.speechSynthesis.getVoices()
+  if (!voices.length) return null
+  return (
+    voices.find(v => v.lang.startsWith('ka')) ||
+    voices.find(v => v.lang.startsWith('ru')) ||
+    voices.find(v => v.lang.startsWith('en')) ||
+    voices[0]
+  )
+}
+
 export function useSpeech() {
-  const utterRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const voiceRef = useRef<SpeechSynthesisVoice | null>(null)
 
   useEffect(() => {
-    return () => { window.speechSynthesis?.cancel() }
+    const load = () => { voiceRef.current = getVoice() }
+    load()
+    window.speechSynthesis.addEventListener('voiceschanged', load)
+    return () => {
+      window.speechSynthesis.removeEventListener('voiceschanged', load)
+      window.speechSynthesis.cancel()
+    }
   }, [])
 
   const speak = useCallback((text: string) => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
-    u.lang = 'ka-GE'
-    u.rate = 0.95
+    // Only set ka-GE if the browser actually has a Georgian voice
+    const voice = voiceRef.current || getVoice()
+    if (voice) {
+      u.voice = voice
+      u.lang = voice.lang
+    }
+    u.rate = 0.88
     u.pitch = 1
-    // Prefer Georgian voice if available, fall back to any available
-    const voices = window.speechSynthesis.getVoices()
-    const kaVoice = voices.find(v => v.lang.startsWith('ka')) ||
-      voices.find(v => v.lang.startsWith('ru')) || // Slavic phonetics closer than English
-      voices[0]
-    if (kaVoice) u.voice = kaVoice
-    utterRef.current = u
     window.speechSynthesis.speak(u)
   }, [])
 
@@ -29,7 +44,5 @@ export function useSpeech() {
     window.speechSynthesis?.cancel()
   }, [])
 
-  const isSpeaking = () => window.speechSynthesis?.speaking ?? false
-
-  return { speak, stop, isSpeaking }
+  return { speak, stop }
 }

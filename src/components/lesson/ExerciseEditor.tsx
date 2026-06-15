@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { CheckCircle, XCircle, Lightbulb, Eye, RotateCcw, Volume2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
 import { useSpeech } from '@/hooks/useSpeech'
@@ -26,11 +26,6 @@ export function ExerciseEditor({ exerciseId, task, starterCode, solution, hints,
   const [showSolution, setShowSolution] = useState(false)
   const [checking, setChecking] = useState(false)
   const { speak } = useSpeech()
-
-  useEffect(() => {
-    const intro = `დავალება: ${task}`
-    speak(intro)
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function checkCode() {
     setChecking(true)
