@@ -1,0 +1,46 @@
+{
+  "name": "codeup-ge",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "^2.11.2",
+    "@monaco-editor/react": "^4.7.0",
+    "@prisma/client": "^6.19.3",
+    "@stripe/stripe-js": "^9.8.0",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "autoprefixer": "^10.5.0",
+    "bcryptjs": "^3.0.3",
+    "clsx": "^2.1.1",
+    "eslint": "^9.39.4",
+    "eslint-config-next": "^16.2.9",
+    "framer-motion": "^12.40.0",
+    "lucide-react": "^1.18.0",
+    "next": "^14.2.35",
+    "next-auth": "^4.24.14",
+    "postcss": "^8.5.15",
+    "prisma": "^6.19.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "stripe": "^22.2.1",
+    "tailwind-merge": "^3.6.0",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "dotenv": "^17.4.2",
+    "tsx": "^4.22.4"
+  }
+}
