@@ -1,7 +1,8 @@
 'use client'
-import { useState } from 'react'
-import { CheckCircle, XCircle, Lightbulb, Eye, RotateCcw } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { CheckCircle, XCircle, Lightbulb, Eye, RotateCcw, Volume2 } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { useSpeech } from '@/hooks/useSpeech'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
@@ -24,6 +25,12 @@ export function ExerciseEditor({ exerciseId, task, starterCode, solution, hints,
   const [attempts, setAttempts] = useState(0)
   const [showSolution, setShowSolution] = useState(false)
   const [checking, setChecking] = useState(false)
+  const { speak } = useSpeech()
+
+  useEffect(() => {
+    const intro = `დავალება: ${task}`
+    speak(intro)
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function checkCode() {
     setChecking(true)
@@ -61,7 +68,11 @@ export function ExerciseEditor({ exerciseId, task, starterCode, solution, hints,
   }
 
   function showNextHint() {
-    if (hintsShown < hints.length) setHintsShown(h => h + 1)
+    if (hintsShown < hints.length) {
+      const nextHint = hints[hintsShown]
+      setHintsShown(h => h + 1)
+      if (nextHint) speak(`მინიშნება: ${nextHint}`)
+    }
   }
 
   return (
@@ -71,6 +82,13 @@ export function ExerciseEditor({ exerciseId, task, starterCode, solution, hints,
         <h3 className="font-bold text-white mb-3 flex items-center gap-2">
           <span className="w-6 h-6 bg-[#6C63FF] rounded-full flex items-center justify-center text-xs">📝</span>
           დავალება
+          <button
+            onClick={() => speak(`დავალება: ${task}`)}
+            title="დავალების მოსმენა"
+            className="ml-auto w-7 h-7 rounded-lg bg-[#6C63FF]/10 border border-[#6C63FF]/30 text-[#6C63FF] hover:bg-[#6C63FF]/20 flex items-center justify-center transition-colors"
+          >
+            <Volume2 className="w-3.5 h-3.5" />
+          </button>
         </h3>
         <p className="text-[#C0C0DD] text-sm leading-relaxed font-georgian">{task}</p>
         {expectedOutput && (

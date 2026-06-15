@@ -1,8 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, Clock, Trophy, ArrowRight, AlertCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, Trophy, ArrowRight, AlertCircle, Volume2 } from 'lucide-react'
 import { formatTime } from '@/lib/utils'
 import { cn } from '@/lib/utils'
+import { useSpeech } from '@/hooks/useSpeech'
 
 interface Question {
   id: string
@@ -31,6 +32,15 @@ export function QuizPlayer({ quizId, examId, title, questions, timeLimit, passMa
   const [score, setScore] = useState(0)
   const [timeLeft, setTimeLeft] = useState(timeLimit * 60)
   const [submitting, setSubmitting] = useState(false)
+  const { speak } = useSpeech()
+
+  useEffect(() => {
+    if (!finished && questions[current]) {
+      const q = questions[current]
+      const opts = q.options.map((o, i) => `${String.fromCharCode(65 + i)}: ${o}`).join('. ')
+      speak(`კითხვა ${current + 1}. ${q.text}. პასუხის ვარიანტები: ${opts}`)
+    }
+  }, [current, finished]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (finished) return
@@ -53,6 +63,12 @@ export function QuizPlayer({ quizId, examId, title, questions, timeLimit, passMa
     setShowFeedback(true)
     const newAnswers = [...answers, selected]
     setAnswers(newAnswers)
+    const q = questions[current]
+    const correct = selected === q?.correctAnswer
+    const msg = correct
+      ? `სწორია! ${q?.explanation || ''}`
+      : `არასწორია. სწორი პასუხია: ${q?.options[q.correctAnswer]}. ${q?.explanation || ''}`
+    speak(msg)
     if (current === questions.length - 1) {
       setTimeout(() => finishQuiz(newAnswers), 1200)
     }
@@ -158,7 +174,19 @@ export function QuizPlayer({ quizId, examId, title, questions, timeLimit, passMa
 
       {/* Question */}
       <div className="card p-6 mb-6">
-        <p className="text-white text-lg font-medium leading-relaxed font-georgian">{q.text}</p>
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-white text-lg font-medium leading-relaxed font-georgian">{q.text}</p>
+          <button
+            onClick={() => {
+              const opts = q.options.map((o, i) => `${String.fromCharCode(65 + i)}: ${o}`).join('. ')
+              speak(`${q.text}. პასუხის ვარიანტები: ${opts}`)
+            }}
+            title="კითხვის მოსმენა"
+            className="shrink-0 w-8 h-8 rounded-lg bg-[#6C63FF]/10 border border-[#6C63FF]/30 text-[#6C63FF] hover:bg-[#6C63FF]/20 flex items-center justify-center transition-colors"
+          >
+            <Volume2 className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       {/* Options */}

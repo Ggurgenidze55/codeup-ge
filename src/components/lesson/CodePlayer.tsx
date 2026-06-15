@@ -1,7 +1,8 @@
 'use client'
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { Play, Pause, RotateCcw, ChevronDown } from 'lucide-react'
+import { Play, Pause, RotateCcw, ChevronDown, Volume2, VolumeX } from 'lucide-react'
 import dynamic from 'next/dynamic'
+import { useSpeech } from '@/hooks/useSpeech'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
@@ -28,7 +29,9 @@ export function CodePlayer({ steps, language = 'html', onComplete }: Props) {
   const [showSpeedMenu, setShowSpeedMenu] = useState(false)
   const [completed, setCompleted] = useState(false)
   const [explanation, setExplanation] = useState(steps[0]?.explanation || '')
+  const [voiceEnabled, setVoiceEnabled] = useState(true)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { speak, stop } = useSpeech()
 
   const currentCode = steps[stepIndex]?.code || ''
 
@@ -47,11 +50,13 @@ export function CodePlayer({ steps, language = 'html', onComplete }: Props) {
       clearTimer()
       if (stepIndex < steps.length - 1) {
         setTimeout(() => {
+          const nextExpl = steps[stepIndex + 1]?.explanation || ''
           setStepIndex(si => si + 1)
           setCharIndex(0)
           setDisplayedCode('')
-          setExplanation(steps[stepIndex + 1]?.explanation || '')
+          setExplanation(nextExpl)
           setIsPlaying(true)
+          if (voiceEnabled && nextExpl) speak(nextExpl)
         }, 600)
       } else {
         setIsPlaying(false)
@@ -85,7 +90,21 @@ export function CodePlayer({ steps, language = 'html', onComplete }: Props) {
 
   function togglePlay() {
     if (completed) restart()
-    else setIsPlaying(p => !p)
+    else {
+      const nextPlaying = !isPlaying
+      setIsPlaying(nextPlaying)
+      if (nextPlaying && voiceEnabled) {
+        const expl = steps[stepIndex]?.explanation
+        if (expl) speak(expl)
+      } else {
+        stop()
+      }
+    }
+  }
+
+  function toggleVoice() {
+    if (voiceEnabled) { stop(); setVoiceEnabled(false) }
+    else { setVoiceEnabled(true) }
   }
 
   const progress = steps.length > 0 ? ((stepIndex / steps.length) + (charIndex / Math.max(1, currentCode.length)) / steps.length) * 100 : 0
@@ -159,6 +178,13 @@ export function CodePlayer({ steps, language = 'html', onComplete }: Props) {
             className="w-8 h-8 text-[#8888AA] hover:text-white transition-colors flex items-center justify-center"
           >
             <RotateCcw className="w-4 h-4" />
+          </button>
+          <button
+            onClick={toggleVoice}
+            title={voiceEnabled ? 'ხმა გამორთვა' : 'ხმა ჩართვა'}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors border ${voiceEnabled ? 'text-[#6C63FF] border-[#6C63FF]/40 bg-[#6C63FF]/10' : 'text-[#8888AA] border-[#2A2A3C] hover:text-white'}`}
+          >
+            {voiceEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
         </div>
 
